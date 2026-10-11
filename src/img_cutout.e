@@ -152,6 +152,20 @@ feature -- Access
 			same_size: attached Result as al_image implies (al_image.width = a_image.width and al_image.height = a_image.height)
 		end
 
+feature -- Removal
+
+	close
+			-- Unload the model now and free its memory (BiRefNet holds about a gigabyte); a long-lived
+			-- program should not wait for the garbage collector.
+		do
+			if attached session as al_session and then al_session.is_loaded then
+				al_session.unload
+			end
+			session := Void
+		ensure
+			closed: not is_ready
+		end
+
 feature -- Status
 
 	is_ready: BOOLEAN

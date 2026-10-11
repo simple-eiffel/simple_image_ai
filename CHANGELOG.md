@@ -2,6 +2,12 @@
 
 All notable changes to simple_image_ai will be documented in this file.
 
+## [0.2.1] - 2026-10-11
+
+### Added
+- IMG_CUTOUT.close: unload the model and free its memory now (BiRefNet holds about a
+  gigabyte; simple_prompter's Publish worker lives as long as the app).
+
 ## [0.2.0] - 2026-10-11
 
 ### Added

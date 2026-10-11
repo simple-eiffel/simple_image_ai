@@ -45,7 +45,7 @@ The model run itself matches Python to 5.4e-7 (debate 01 in simple_image's `.eif
 
 ```bash
 /d/prod/ec.sh test -config simple_image_ai.ecf -target simple_image_ai_tests
-PATH="/d/prod/simple_onnx/lib/onnxruntime/lib:/d/prod/simple_cairo:$PATH" ./EIFGENs/simple_image_ai_tests/F_code/simple_image_ai.exe
+PATH="/d/prod/simple_onnx/lib/onnxruntime/bin:/d/prod/simple_cairo:$PATH" ./EIFGENs/simple_image_ai_tests/F_code/simple_image_ai.exe
 ```
 
 The photo tests need a photo of a person at `data/input/person.png` and rembg's mask of it at

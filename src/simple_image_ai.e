@@ -79,7 +79,7 @@ feature -- Model files
 			Result.append ({STRING_32} "\.rembg\models")
 		end
 
-	version: STRING = "0.2.0"
+	version: STRING = "0.2.1"
 			-- Library version.
 
 end

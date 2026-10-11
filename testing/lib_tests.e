@@ -22,6 +22,8 @@ feature -- Tests
 		do
 			create l_cutout.make ("data/input/no_such_model.onnx")
 			assert ("not ready", not l_cutout.is_ready)
+			l_cutout.close
+			assert ("close on a missing model is harmless", not l_cutout.is_ready)
 			assert ("reason: " + l_cutout.last_error, l_cutout.last_error.has_substring ("no model"))
 		end
 
@@ -35,6 +37,22 @@ feature -- Tests
 			-- The Eiffel BiRefNet-portrait mask of a real photo against rembg's own.
 		do
 			compare_with_rembg (ready_portrait, Expected_portrait_mask, "person_mask_birefnet_eiffel.png")
+		end
+
+	test_close_frees_the_model
+			-- close unloads the session; the cutout is no longer ready.
+		local
+			l_ai: SIMPLE_IMAGE_AI
+			l_cutout: IMG_CUTOUT
+		do
+			create l_ai.make
+			l_cutout := l_ai.new_cutout (l_ai.rembg_model_path)
+			if l_cutout.is_ready then
+				l_cutout.close
+				assert ("closed", not l_cutout.is_ready)
+			else
+				io.put_string ("    SKIPPED: needs the u2net_human_seg model%N")
+			end
 		end
 
 	compare_with_rembg (a_cutout: detachable IMG_CUTOUT; a_expected, a_output: STRING)
