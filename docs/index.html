@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>simple_image_ai - AI Image Helpers for Eiffel</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.svg" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_image_ai</h1>
+        <p class="tagline">AI Helpers for simple_image: Person Cutout in Pure Eiffel</p>
+        <div class="badges">
+            <span class="badge badge-version">v0.1.0</span>
+            <span class="badge badge-license">MIT</span>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#quick-start">Quick Start</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#api">API Reference</a></li>
+            <li><a href="#design">Measured Against rembg</a></li>
+            <li><a href="#testing">Testing</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_image_ai">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>
+                <strong>simple_image_ai</strong> holds the AI helpers for
+                <a href="https://github.com/simple-eiffel/simple_image">simple_image</a>, running ONNX models through
+                <a href="https://github.com/simple-eiffel/simple_onnx">simple_onnx</a>. It is pure Eiffel: no Python at run time.
+            </p>
+            <p>
+                Its first helper is a person cutout: a mask of the people in a photo, from <code>u2net_human_seg</code>,
+                the model rembg uses.
+            </p>
+            <p>
+                Part of the <a href="https://github.com/simple-eiffel">Simple Eiffel</a> ecosystem.
+            </p>
+        </section>
+
+        <section id="quick-start">
+            <h2>Quick Start</h2>
+
+            <h3>Installation</h3>
+            <ol>
+                <li>Set the environment variable:
+<pre><code>export SIMPLE_EIFFEL=/d/prod</code></pre>
+                </li>
+                <li>Add to your ECF file:
+<pre><code>&lt;library name=&quot;simple_image_ai&quot; location=&quot;$SIMPLE_EIFFEL/simple_image_ai/simple_image_ai.ecf&quot;/&gt;</code></pre>
+                </li>
+            </ol>
+
+            <h3>Cut Out a Person and Add a Glow</h3>
+<pre><code><span class="keyword">local</span>
+    ai: <span class="type">SIMPLE_IMAGE_AI</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> ai.make
+    cutout := ai.new_cutout (ai.rembg_model_path)     <span class="comment">-- loads in about 2 seconds; keep it</span>
+    <span class="keyword">if</span> cutout.is_ready <span class="keyword">and then</span> <span class="keyword">attached</span> cutout.cut_out (photo) <span class="keyword">as</span> al_person <span class="keyword">then</span>
+        glow := al_person.alpha
+        glow.grow (6)
+        glow.blur (10)
+        canvas.fill_through (glow, 0xFFFFD34D, 0, 0)
+        canvas.place (al_person, 0, 0)
+    <span class="keyword">else</span>
+        print (cutout.last_error)
+    <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+            <p>
+                The model file is expected at <code>%USERPROFILE%\.rembg\models\u2net_human_seg\u2net_human_seg.onnx</code>,
+                where rembg keeps it. The ONNX Runtime DLL must be on the <code>PATH</code>.
+            </p>
+        </section>
+
+        <section id="features">
+            <h2>Key Features</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Person Mask</h4>
+                    <p>mask_for gives an IMG_MASK of the people in a photo, the same size as the photo.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Person Cutout</h4>
+                    <p>cut_out gives a copy with the background transparent: largest piece kept, color under alpha 0 kept.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>rembg&#x27;s Recipe</h4>
+                    <p>Lanczos to 320x320, divide by the largest value, mean and standard deviation per channel, channels first.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Pure Eiffel</h4>
+                    <p>simple_onnx runs the model; no Python at run time.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Fast</h4>
+                    <p>About 260 milliseconds per 1920x1080 frame on the CPU, against 2-3 seconds through Python.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Error Reporting</h4>
+                    <p>A missing or unloadable model is reported through last_error; check is_ready.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="api">
+            <h2>API Reference</h2>
+
+            <div class="api-section">
+                <h3>SIMPLE_IMAGE_AI (Facade)</h3>
+                <p>AI helpers for simple_image, on simple_onnx.</p>
+
+                <h4>Initialization</h4>
+                <div class="signature">make</div>
+                <p>Ready.</p>
+                <h4>Helpers</h4>
+                <div class="signature">new_cutout (a_model_path: READABLE_STRING_GENERAL): IMG_CUTOUT</div>
+                <p>A person cutout running the u2net_human_seg model at the path (check is_ready; loading takes about 2 seconds, so keep it).</p>
+                <h4>Model files</h4>
+                <div class="signature">rembg_model_path: STRING_32</div>
+                <p>Where rembg keeps u2net_human_seg: %USERPROFILE%\.rembg\models\u2net_human_seg\u2net_human_seg.onnx.</p>
+                <div class="signature">version: STRING</div>
+            </div>
+            <div class="api-section">
+                <h3>IMG_CUTOUT</h3>
+                <p>Person cutout: a mask of the people in a photo, from the u2net_human_seg model on simple_onnx (the model rembg uses).</p>
+
+                <h4>Initialization</h4>
+                <div class="signature">make (a_model_path: READABLE_STRING_GENERAL)</div>
+                <p>Load the model at the path (about 2 seconds; do it once).</p>
+                <h4>Access</h4>
+                <div class="signature">mask_for (a_image: IMG_IMAGE): detachable IMG_MASK</div>
+                <p>Coverage of the people in the image (same size; 255 = person), or Void (see last_error). Alpha in the image is ignored, as rembg ignores it.</p>
+                <div class="signature">cut_out (a_image: IMG_IMAGE): detachable IMG_IMAGE</div>
+                <p>A copy of the image with the people kept and the rest transparent (largest piece only), or Void (see last_error).</p>
+                <h4>Status</h4>
+                <div class="signature">is_ready: BOOLEAN</div>
+                <p>Was the model loaded?</p>
+                <div class="signature">last_error: STRING</div>
+                <p>Why the model did not load or the last run failed (empty when all is well).</p>
+                <h4>Constants</h4>
+                <div class="signature">Side: INTEGER</div>
+                <p>The model&#x27;s square input size (320).</p>
+            </div>
+        </section>
+
+        <section id="design">
+            <h2>Measured Against rembg</h2>
+            <p>
+                On a 1920x1080 video frame, the Eiffel mask was compared with rembg's own mask of the same frame
+                (measured 2026-10-11):
+            </p>
+                <table class="api-table">
+                    <tr><th>Measure</th><th>Result</th></tr>
+                    <tr><td>Intersection over union at 128</td><td>0.9997</td></tr>
+                    <tr><td>Mean difference</td><td>0.09 levels</td></tr>
+                    <tr><td>Largest difference</td><td>8 levels (edge pixels, from resize rounding)</td></tr>
+                    <tr><td>Time per frame, Eiffel on the CPU</td><td>about 260 milliseconds</td></tr>
+                    <tr><td>Time per frame, through Python</td><td>2-3 seconds</td></tr>
+                    <tr><td>Model run against Python</td><td>matches to 5.4e-7 (debate 01 in simple_image's <code>.eiffel-workflow</code>)</td></tr>
+                </table>
+        </section>
+
+        <section id="testing">
+            <h2>Testing</h2>
+            <pre><code>/d/prod/ec.sh test -config simple_image_ai.ecf -target simple_image_ai_tests
+PATH="/d/prod/simple_onnx/lib/onnxruntime/lib:/d/prod/simple_cairo:$PATH" ./EIFGENs/simple_image_ai_tests/F_code/simple_image_ai.exe</code></pre>
+            <p>
+                The photo tests need a photo of a person at <code>data/input/person.png</code> and rembg's mask of it at
+                <code>data/expected/person_mask_rembg.png</code>, made by <code>.eiffel-workflow/evidence/rembg_reference.py</code>
+                (an evidence tool, not product code). <strong>Test photos are never committed</strong>; without them those tests
+                print SKIPPED.
+            </p>
+
+            <h3>Dependencies</h3>
+            <ul>
+                <li><a href="https://github.com/simple-eiffel/simple_image">simple_image</a></li>
+                <li><a href="https://github.com/simple-eiffel/simple_onnx">simple_onnx</a> (with input staged in C memory, 2026-10-11)</li>
+                <li>The ONNX Runtime DLL on the <code>PATH</code></li>
+                <li>The model file (<code>u2net_human_seg.onnx</code>)</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 simple_* ecosystem. MIT License.</p>
+        <p>Uses the u2net_human_seg model, as rembg does.</p>
+        <p>
+            <a href="https://github.com/simple-eiffel/simple_image_ai">GitHub</a> |
+            <a href="https://simple-eiffel.github.io">Documentation</a>
+        </p>
+    </footer>
+</body>
+</html>

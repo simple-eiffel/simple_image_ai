@@ -1,6 +1,12 @@
+<p align="center">
+  <img src="docs/images/logo.svg" alt="simple_image_ai logo" width="400">
+</p>
+
 # simple_image_ai
 
-AI helpers for [simple_image](../simple_image), running ONNX models through simple_onnx.
+**[Documentation](https://simple-eiffel.github.io/simple_image_ai/)** | **[GitHub](https://github.com/simple-eiffel/simple_image_ai)**
+
+AI helpers for [simple_image](https://github.com/simple-eiffel/simple_image), running ONNX models through simple_onnx.
 Pure Eiffel: no Python at run time.
 
 - **IMG_CUTOUT**: a mask of the people in a photo, from `u2net_human_seg` (the model rembg
