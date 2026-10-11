@@ -58,7 +58,7 @@ feature -- Tests
 		end
 
 	test_thumbnail_from_cutout
-			-- Verification queue 4 and 6: cut the person out (colour under alpha 0 kept), give them
+			-- Verification queue 4 and 6: cut the person out (color under alpha 0 kept), give them
 			-- a glow, place them on a darkened, blurred copy of the frame, title in outlined text.
 			-- Writes data/output/thumbnail.jpg (1280x720).
 		local
@@ -82,7 +82,7 @@ feature -- Tests
 						end
 						y := y + 7
 					end
-					assert ("colour kept under alpha 0", l_kept > 0)
+					assert ("color kept under alpha 0", l_kept > 0)
 
 					l_background := al_photo.resized (1280, 720)
 					l_background.blur (6)

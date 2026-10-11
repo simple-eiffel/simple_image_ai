@@ -11,7 +11,7 @@ Pure Eiffel: no Python at run time.
 
 - **IMG_CUTOUT**: a mask of the people in a photo, from `u2net_human_seg` (the model rembg
   uses). `mask_for (photo)` gives an IMG_MASK; `cut_out (photo)` gives a copy with the
-  background transparent (largest piece kept, colour under alpha 0 kept).
+  background transparent (largest piece kept, color under alpha 0 kept).
 - **SIMPLE_IMAGE_AI**: facade: `new_cutout (model_path)`, `rembg_model_path`
   (`%USERPROFILE%\.rembg\models\u2net_human_seg\u2net_human_seg.onnx`).
 
