@@ -2,6 +2,14 @@
 
 All notable changes to simple_image_ai will be documented in this file.
 
+## [0.2.2] - 2026-10-11
+
+### Added
+- `test_cutout_lets_other_processors_run` (with `CUTOUT_WORKER`, `CUTOUT_DONE`): the
+  BiRefNet-portrait cutout runs on another processor while the test allocates and times its
+  longest stall. With simple_onnx 1.0 it stalled 12,785 ms; with simple_onnx 1.1.0 (ONNX
+  calls marked `C blocking`) 627 and 559 ms. simple_prompter's window had frozen the same way.
+
 ## [0.2.1] - 2026-10-11
 
 ### Added

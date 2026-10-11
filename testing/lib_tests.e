@@ -55,6 +55,61 @@ feature -- Tests
 			end
 		end
 
+	test_cutout_lets_other_processors_run
+			-- While a cutout loads and runs on another processor, this one keeps allocating with
+			-- no long stall: the ONNX calls are marked `C blocking', so a collection does not wait
+			-- for them. (2026-10-11: simple_prompter's window froze 5 seconds on BiRefNet's load
+			-- and 10 on its run.)
+		local
+			l_done: separate CUTOUT_DONE
+			l_worker: separate CUTOUT_WORKER
+			l_start, l_last, l_now, l_longest: REAL_64
+			l_junk: STRING
+			l_finished: BOOLEAN
+			l_bytes: INTEGER_64
+		do
+			if not (create {RAW_FILE}.make_with_name ((create {SIMPLE_IMAGE_AI}.make).portrait_model_path)).exists
+				or not (create {RAW_FILE}.make_with_name (Photo)).exists
+			then
+				io.put_string ("    SKIPPED: needs the BiRefNet-portrait model and " + Photo + "%N")
+			else
+				create l_done
+				create l_worker.make (l_done)
+				start_cutout (l_worker)
+				l_start := now_ms
+				l_last := l_start
+				from until l_finished or l_last - l_start > 120000 loop
+					create l_junk.make_filled ('x', 20000)
+					l_bytes := l_bytes + l_junk.count
+					l_now := now_ms
+					l_longest := l_longest.max (l_now - l_last)
+					l_last := l_now
+					l_finished := is_raised (l_done)
+				end
+				io.put_string ("    the cutout on another processor took " + ((l_last - l_start) / 1000).rounded.out
+					+ " s; meanwhile " + (l_bytes // 1_000_000).out + " MB allocated here, longest stall "
+					+ l_longest.rounded.out + " ms%N")
+				assert ("the cutout finished with a mask", l_finished and then mask_made (l_done))
+				assert ("no stall of a second or more: " + l_longest.rounded.out + " ms", l_longest < 1000)
+			end
+		end
+
+	start_cutout (a_worker: separate CUTOUT_WORKER)
+			-- Start `a_worker' (it runs on while this processor goes on).
+		do
+			a_worker.run
+		end
+
+	is_raised (a_done: separate CUTOUT_DONE): BOOLEAN
+		do
+			Result := a_done.is_set
+		end
+
+	mask_made (a_done: separate CUTOUT_DONE): BOOLEAN
+		do
+			Result := a_done.made_mask
+		end
+
 	compare_with_rembg (a_cutout: detachable IMG_CUTOUT; a_expected, a_output: STRING)
 			-- Run `a_cutout' on `Photo' and compare with rembg's mask in `a_expected'.
 		local
