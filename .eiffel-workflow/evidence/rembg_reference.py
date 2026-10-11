@@ -5,7 +5,7 @@ from PIL import Image
 from rembg import new_session
 
 photo, out = sys.argv[1], sys.argv[2]
-session = new_session("u2net_human_seg")
+session = new_session(sys.argv[3] if len(sys.argv) > 3 else "u2net_human_seg")  # or birefnet-portrait
 mask = session.predict(Image.open(photo).convert("RGB"))[0]
 mask.save(out)
 print("reference mask", mask.size, mask.mode, "->", out)

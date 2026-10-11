@@ -9,10 +9,12 @@
 AI helpers for [simple_image](https://github.com/simple-eiffel/simple_image), running ONNX models through simple_onnx.
 Pure Eiffel: no Python at run time.
 
-- **IMG_CUTOUT**: a mask of the people in a photo, from `u2net_human_seg` (the model rembg
-  uses). `mask_for (photo)` gives an IMG_MASK; `cut_out (photo)` gives a copy with the
+- **IMG_CUTOUT**: a mask of the people in a photo, from either of two models rembg uses:
+  `make` runs `u2net_human_seg` (about 0.3 seconds, but it keeps a chair behind the person),
+  `make_portrait` runs BiRefNet-portrait (about 10 seconds on the CPU; leaves the chair out). `mask_for (photo)` gives an IMG_MASK; `cut_out (photo)` gives a copy with the
   background transparent (largest piece kept, color under alpha 0 kept).
-- **SIMPLE_IMAGE_AI**: facade: `new_cutout (model_path)`, `rembg_model_path`
+- **SIMPLE_IMAGE_AI**: facade: `new_cutout (model_path)`, `new_portrait_cutout (model_path)`,
+  `portrait_model_path`, `rembg_model_path`
   (`%USERPROFILE%\.rembg\models\u2net_human_seg\u2net_human_seg.onnx`).
 
 ```eiffel

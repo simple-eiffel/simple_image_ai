@@ -2,6 +2,16 @@
 
 All notable changes to simple_image_ai will be documented in this file.
 
+## [0.2.0] - 2026-10-11
+
+### Added
+- IMG_CUTOUT.make_portrait: the BiRefNet-portrait model (1024x1024, output through a sigmoid),
+  which leaves a chair behind the person out. Chosen by measurement over u2net_human_seg,
+  birefnet-general-lite and isnet-general-use on three takes with hand-cleared cutouts:
+  89-97% of the chair cleared, IoU 0.987 against the hand masks. Against rembg's own
+  BiRefNet on a 1920x1080 frame: IoU 0.9998, mean difference 0.07 levels, about 10 seconds.
+- SIMPLE_IMAGE_AI: new_portrait_cutout, portrait_model_path, rembg_models.
+
 ## [0.1.0] - 2026-10-11
 
 ### Added

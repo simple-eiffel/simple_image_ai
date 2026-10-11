@@ -26,15 +26,27 @@ feature -- Tests
 		end
 
 	test_mask_matches_rembg
-			-- The Eiffel mask of a real photo against rembg's own mask of it.
+			-- The Eiffel u2net mask of a real photo against rembg's own mask of it.
+		do
+			compare_with_rembg (ready_cutout, Expected_mask, "person_mask_eiffel.png")
+		end
+
+	test_portrait_mask_matches_rembg
+			-- The Eiffel BiRefNet-portrait mask of a real photo against rembg's own.
+		do
+			compare_with_rembg (ready_portrait, Expected_portrait_mask, "person_mask_birefnet_eiffel.png")
+		end
+
+	compare_with_rembg (a_cutout: detachable IMG_CUTOUT; a_expected, a_output: STRING)
+			-- Run `a_cutout' on `Photo' and compare with rembg's mask in `a_expected'.
 		local
 			l_images: SIMPLE_IMAGE
 			l_t0: REAL_64
 			l_stats: MANAGED_POINTER
 		do
 			create l_images.make
-			if attached ready_cutout as al_cutout and then attached l_images.load (Photo) as al_photo
-				and then attached l_images.load_mask (Expected_mask) as al_reference
+			if attached a_cutout as al_cutout and then attached l_images.load (Photo) as al_photo
+				and then attached l_images.load_mask (a_expected) as al_reference
 			then
 				l_t0 := now_ms
 				if attached al_cutout.mask_for (al_photo) as al_mask then
@@ -46,14 +58,14 @@ feature -- Tests
 					io.put_string ("    vs rembg: largest difference " + l_stats.read_real_64 (0).out
 						+ ", mean " + rounded (l_stats.read_real_64 (8)) + ", IoU at 128 " + rounded (l_stats.read_real_64 (16))
 						+ " (person pixels: eiffel " + l_stats.read_real_64 (24).truncated_to_integer.out + ")%N")
-					assert ("mask written", al_mask.save_png (output_path ("person_mask_eiffel.png")))
+					assert ("mask written", al_mask.save_png (output_path (a_output)))
 					assert ("IoU at least 0.99", l_stats.read_real_64 (16) >= 0.99)
 					assert ("mean difference at most 1 level", l_stats.read_real_64 (8) <= 1.0)
 				else
 					assert ("ran: " + al_cutout.last_error, False)
 				end
 			else
-				io.put_string ("    SKIPPED: needs the model, " + Photo + " and " + Expected_mask + "%N")
+				io.put_string ("    SKIPPED: needs the model, " + Photo + " and " + a_expected + "%N")
 			end
 		end
 
@@ -118,6 +130,23 @@ feature {NONE} -- Helpers
 			-- Local test photo (never committed).
 
 	Expected_mask: STRING = "data/expected/person_mask_rembg.png"
+			-- rembg u2net_human_seg mask of `Photo'.
+
+	Expected_portrait_mask: STRING = "data/expected/person_mask_birefnet.png"
+			-- rembg BiRefNet-portrait mask of `Photo'.
+
+	ready_portrait: detachable IMG_CUTOUT
+			-- The BiRefNet-portrait model, loaded once, when present.
+		local
+			l_ai: SIMPLE_IMAGE_AI
+			l_cutout: IMG_CUTOUT
+		once
+			create l_ai.make
+			l_cutout := l_ai.new_portrait_cutout (l_ai.portrait_model_path)
+			if l_cutout.is_ready then
+				Result := l_cutout
+			end
+		end
 			-- rembg's mask of `Photo'.
 
 	ready_cutout: detachable IMG_CUTOUT

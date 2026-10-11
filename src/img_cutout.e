@@ -1,12 +1,17 @@
 note
 	description: "[
-		Person cutout: a mask of the people in a photo, from the u2net_human_seg model on
-		simple_onnx (the model rembg uses), in pure Eiffel.
+		Person cutout: a mask of the people in a photo, run on simple_onnx in pure Eiffel, with
+		either of two models rembg uses:
+		  `make'          u2net_human_seg: 320x320, about 0.3 seconds, but keeps a chair
+		                  behind the person as part of them;
+		  `make_portrait' BiRefNet-portrait: 1024x1024, about 10 seconds on the CPU, leaves the
+		                  chair out (2026-10-11: 89-97% of the chair cleared on three takes,
+		                  IoU 0.987 against hand-cleared cutouts).
 
-		Recipe (read from rembg's source): Lanczos to 320x320, divide by the image's largest
-		value, per channel (x - mean) / std, channels first; the first output stretched to
-		0-255 and resized back. simple_onnx was shown to run the model exactly (debate 01:
-		largest difference from Python 5.4e-7, mask IoU 1.0).
+		Recipe (read from rembg's source): Lanczos to the model's square size, divide by the
+		image's largest value, per channel (x - mean) / std, channels first; the first output
+		(through a sigmoid for BiRefNet) stretched to 0-255 and resized back. simple_onnx was
+		shown to run u2net exactly (debate 01: largest difference from Python 5.4e-7).
 
 		Usage:
 			cutout: IMG_CUTOUT
@@ -26,12 +31,40 @@ class
 	IMG_CUTOUT
 
 create
-	make
+	make,
+	make_portrait
 
 feature {NONE} -- Initialization
 
 	make (a_model_path: READABLE_STRING_GENERAL)
 			-- Load the u2net_human_seg model at `a_model_path' (about 2 seconds; do it once).
+		require
+			path_not_empty: not a_model_path.is_empty
+			narrow_path: a_model_path.is_valid_as_string_8
+		do
+			side := 320
+			load (a_model_path)
+		ensure
+			ready_or_reason: is_ready = last_error.is_empty
+			u2net: side = 320 and not uses_sigmoid
+		end
+
+	make_portrait (a_model_path: READABLE_STRING_GENERAL)
+			-- Load the BiRefNet-portrait model at `a_model_path' (several seconds; do it once).
+		require
+			path_not_empty: not a_model_path.is_empty
+			narrow_path: a_model_path.is_valid_as_string_8
+		do
+			side := 1024
+			uses_sigmoid := True
+			load (a_model_path)
+		ensure
+			ready_or_reason: is_ready = last_error.is_empty
+			birefnet: side = 1024 and uses_sigmoid
+		end
+
+	load (a_model_path: READABLE_STRING_GENERAL)
+			-- Load the model at `a_model_path'.
 		require
 			path_not_empty: not a_model_path.is_empty
 			narrow_path: a_model_path.is_valid_as_string_8
@@ -70,23 +103,26 @@ feature -- Access
 			l_opaque := a_image.twin
 			create l_full.make_filled (a_image.width, a_image.height, 255)
 			l_opaque.set_alpha (l_full)
-			l_small := l_opaque.resized (Side, Side)
+			l_small := l_opaque.resized (side, side)
 			l_opaque.destroy
 			l_full.destroy
 
-			create l_input.make (3 * Side * Side * 4)
-			c_normalize (l_small.pixels, Side * Side, l_input.item)
+			create l_input.make (3 * side * side * 4)
+			c_normalize (l_small.pixels, side * side, l_input.item)
 			l_small.destroy
-			l_tensor := onnx.create_tensor_float32 (onnx.create_shape (<<1, 3, Side, Side>>))
+			l_tensor := onnx.create_tensor_float32 (onnx.create_shape (<<1, 3, side, side>>))
 			l_tensor.set_data_from_pointer (l_input.item)
 
 			if attached session as al_session then
 				if attached al_session.execute (l_tensor) as al_result and then al_result.is_success
-					and then attached al_result.output_tensor as al_out and then al_out.element_count = Side * Side
+					and then attached al_result.output_tensor as al_out and then al_out.element_count = side * side
 				then
-					create l_output.make (Side * Side * 4)
+					create l_output.make (side * side * 4)
 					al_out.copy_data_to (l_output.item)
-					create l_small_mask.make_from_floats (l_output.item, Side, Side)
+					if uses_sigmoid then
+						c_sigmoid (l_output.item, side * side)
+					end
+					create l_small_mask.make_from_floats (l_output.item, side, side)
 					Result := l_small_mask.resized (a_image.width, a_image.height)
 					l_small_mask.destroy
 					last_error := ""
@@ -127,10 +163,13 @@ feature -- Status
 	last_error: STRING
 			-- Why the model did not load or the last run failed ("" when all is well).
 
-feature -- Constants
+feature -- Model
 
-	Side: INTEGER = 320
-			-- The model's square input size.
+	side: INTEGER
+			-- The model's square input size (320 for u2net_human_seg, 1024 for BiRefNet-portrait).
+
+	uses_sigmoid: BOOLEAN
+			-- Does the model's output pass through a sigmoid before stretching (BiRefNet)?
 
 feature {NONE} -- Implementation
 
@@ -156,7 +195,19 @@ feature {NONE} -- Implementation
 			]"
 		end
 
+	c_sigmoid (a_values: POINTER; a_n: INTEGER)
+			-- Replace each of `a_n' floats v with 1 / (1 + e^-v).
+		external
+			"C inline use <math.h>"
+		alias
+			"[
+				float *v = (float *) $a_values; size_t i, n = (size_t) $a_n;
+				for (i = 0; i < n; i++) v[i] = (float) (1.0 / (1.0 + exp (- (double) v[i])));
+			]"
+		end
+
 invariant
 	error_not_void: last_error /= Void
+	known_model: side = 320 or side = 1024
 
 end
