@@ -1,0 +1,6 @@
+EIFGENs/
+data/output/
+# test photos are private: supply your own locally
+data/input/
+data/expected/
+tmpclaude-*
