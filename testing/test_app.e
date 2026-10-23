@@ -23,6 +23,7 @@ feature {NONE} -- Initialization
 			run_test (agent l_tests.test_mask_matches_rembg, "test_mask_matches_rembg")
 			run_test (agent l_tests.test_portrait_mask_matches_rembg, "test_portrait_mask_matches_rembg")
 			run_test (agent l_tests.test_close_frees_the_model, "test_close_frees_the_model")
+			run_test (agent l_tests.test_cutout_lets_other_processors_run, "test_cutout_lets_other_processors_run")
 			run_test (agent l_tests.test_thumbnail_from_cutout, "test_thumbnail_from_cutout")
 
 			io.put_string ("%N========================%N")
