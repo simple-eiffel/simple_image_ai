@@ -276,9 +276,9 @@ feature {NONE} -- Helpers
 	now_ms: REAL_64
 			-- A millisecond clock.
 		external
-			"C inline use <windows.h>"
+			"C inline use <time.h>"
 		alias
-			"LARGE_INTEGER f, c; QueryPerformanceFrequency (&f); QueryPerformanceCounter (&c); return (EIF_REAL_64) c.QuadPart * 1000.0 / (EIF_REAL_64) f.QuadPart;"
+			"struct timespec t; timespec_get (&t, TIME_UTC); return (EIF_REAL_64) t.tv_sec * 1000.0 + (EIF_REAL_64) t.tv_nsec / 1000000.0;"
 		end
 
 end
